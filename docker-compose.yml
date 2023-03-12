@@ -9,7 +9,7 @@ services:
     hostname: teampointbarre-hugo
     command: server
     volumes:
-      - "./hugo:/src"
+      - ".:/src"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.hugo.rule=Host(`teampointbarre-hugo.traefik.me`)"
