@@ -1,0 +1,54 @@
+version: '3.9'
+
+services:
+
+  hugo:
+    container_name: teampointbarre_hugo
+    image: klakegg/hugo:0.107.0-ext-alpine
+    restart: unless-stopped
+    hostname: teampointbarre-hugo
+    command: server
+    volumes:
+      - "./hugo:/src"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hugo.rule=Host(`teampointbarre-hugo.traefik.me`)"
+      - "traefik.http.routers.hugo-tls.tls.domains[0].main=teampointbarre-hugo.traefik.me"
+      - "traefik.http.routers.hugo.tls=true"
+    networks:
+      - teampointbarre-network
+
+  traefik:
+    container_name: teampointbarre_traefik
+    restart: unless-stopped
+    hostname: teampointbarre-traefik
+    image: traefik:latest
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    labels:
+      - "traefik.http.services.traefik.loadbalancer.server.port=8080"
+    volumes:
+      - ./traefik/traefik.yml:/etc/traefik/traefik.yml
+      - ./traefik/tls.yml:/etc/traefik/tls.yml
+      - /var/run/docker.sock:/var/run/docker.sock
+      - certs:/etc/ssl/traefik
+    networks:
+      - teampointbarre-network
+
+  traefik_certs:
+    container_name: teampointbarre_traefik_certs
+    image: alpine
+    command: sh -c "cd /etc/ssl/traefik
+      && wget traefik.me/cert.pem -O cert.pem
+      && wget traefik.me/privkey.pem -O privkey.pem"
+    volumes:
+      - certs:/etc/ssl/traefik
+
+networks:
+  teampointbarre-network:
+    driver: bridge
+
+volumes:
+  certs:
